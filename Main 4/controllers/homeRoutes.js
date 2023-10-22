@@ -1,5 +1,5 @@
       const router = require('express').Router();
-      const { User, Post, Comment } = require('../models');
+      const { User, Post, Comments } = require('../models');
       const withAuth = require('../utils/auth');
 
       router.get('/', async (req, res) => {
@@ -79,7 +79,7 @@
         } catch (err) {}
       });
 
-      router.get('/post/:id/comment', withAuth, async (req, res) => {
+      router.get('/post/:id/comments', withAuth, async (req, res) => {
         try {
           // Gets the selected post
           const result = await Post.findOne({
@@ -89,7 +89,7 @@
             include: [
               { model: User },
               {
-                model: Comment,
+                model: Comments,
                 include: {
                   model: User,
                 },
@@ -104,7 +104,7 @@
             res.redirect('/login');
 
           } else {
-            res.render('addComment', {
+            res.render('addComments', {
               post: postsFlat,
               user: req.session.user,
             });
@@ -148,10 +148,10 @@
       });
 
       // Adds post request for adding comments
-      router.post('/:post_id/comment', async (req, res) => {
+      router.post('/:post_id/comments', async (req, res) => {
         try {
           // Creates the comment
-          const comment = await Comment.create({
+          const comment = await Comments.create({
             body: req.body.commentText,
             post_id: req.params.post_id,
             user_id: req.session.user_id,
@@ -163,7 +163,7 @@
 
           } else {
             // Renders the comment page
-            res.redirect(`/post/${req.params.post_id}/comment`);
+            res.redirect(`/post/${req.params.post_id}/comments`);
           }
         } catch (err) {}
       });
@@ -179,7 +179,7 @@
             include: [
               { model: User },
               {
-                model: Comment,
+                model: Comments,
                 include: {
                   model: User,
                 },
