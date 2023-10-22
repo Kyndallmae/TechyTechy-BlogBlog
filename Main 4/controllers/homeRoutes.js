@@ -4,7 +4,7 @@
 
       router.get('/', async (req, res) => {
         try {
-          // Get all projects and JOIN with user data
+          // Get all posts
           const results = await Post.findAll({
             include: {
               model: User,
@@ -14,7 +14,7 @@
           // Makes the template readable
           const postsFlat = results.map((post) => post.get({ plain: true }));
 
-          // Pass serialized data and session flag into template
+          // Sends data and session to template
           if (req.session.user_name === undefined) {
             res.render('homepage', {
               post: postsFlat,
