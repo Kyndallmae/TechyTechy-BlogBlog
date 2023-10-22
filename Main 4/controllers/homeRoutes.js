@@ -1,82 +1,290 @@
-const router = require('express').Router();
-const { Project, User } = require('../models');
-const withAuth = require('../utils/auth');
+      const router = require('express').Router();
+      const { User, Post, Comment } = require('../models');
+      const withAuth = require('../utils/auth');
 
-router.get('/', async (req, res) => {
-  try {
-    // Get all projects and JOIN with user data
-    const projectData = await Project.findAll({
-      include: [
-        {
-          model: User,
-          attributes: ['name'],
-        },
-      ],
-    });
+      router.get('/', async (req, res) => {
+        try {
+          // Get all projects and JOIN with user data
+          const results = await Post.findAll({
+            include: {
+              model: User,
+            },
+          });
 
-    // Serialize data so the template can read it
-    const projects = projectData.map((project) => project.get({ plain: true }));
+          // Makes the template readable
+          const postsFlat = results.map((post) => post.get({ plain: true }));
 
-    // Pass serialized data and session flag into template
-    res.render('homepage', { 
-      projects, 
-      logged_in: req.session.logged_in 
-    });
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+          // Pass serialized data and session flag into template
+          if (req.session.user_name === undefined) {
+            res.render('homepage', {
+              post: postsFlat,
+            });
 
-router.get('/project/:id', async (req, res) => {
-  try {
-    const projectData = await Project.findByPk(req.params.id, {
-      include: [
-        {
-          model: User,
-          attributes: ['name'],
-        },
-      ],
-    });
+          } else {
+            // Renders the homepage
+            res.render('homepage', {
+              posts: postsFlat,
+              user: req.session.user_name,
+            });
+          }
+        } catch (err) {
+          res.status(500).json(err);
+        }
+      });
 
-    const project = projectData.get({ plain: true });
+      router.post('/', async (req, res) => {
+        try {
+          const post = await Post.create({
+            body: req.body.body,
+            title: req.body.title,
+            user_id: req.session.user.id,
+          });
+          // Checks that users are logged in
+          if (req.session.user === undefined) {
+            res.redirect('/login');
 
-    res.render('project', {
-      ...project,
-      logged_in: req.session.logged_in
-    });
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+          } else {
+            // Renders homepage
+            res.redirect('/');
+          }
 
-// Use withAuth middleware to prevent access to route
-router.get('/profile', withAuth, async (req, res) => {
-  try {
-    // Find the logged in user based on the session ID
-    const userData = await User.findByPk(req.session.user_id, {
-      attributes: { exclude: ['password'] },
-      include: [{ model: Project }],
-    });
+        } catch (error) {
+          console.log(error);
+        }
+      });
 
-    const user = userData.get({ plain: true });
+      // Use withAuth middleware to prevent access to route
+      router.get('/dashboard', withAuth, async (req, res) => {
+        try {
+          // Find the logged in user based on the session ID
+          const result = await Post.findAll({
+            where: {
+              user_id: req.session.user_id,
+            },
+            include: [User],
+          });
 
-    res.render('profile', {
-      ...user,
-      logged_in: true
-    });
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+          const postsFlat = result.map((post) => post.get({ plain: true }));
 
-router.get('/login', (req, res) => {
-  // If the user is already logged in, redirect the request to another route
-  if (req.session.logged_in) {
-    res.redirect('/profile');
-    return;
-  }
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+          } else {
+            // Renders dashboard
+            res.render('dashboard', {
+              posts: postsFlat,
+              user: req.session.user_name,
+              user_id: req.session.user_id,
+            });
+          }
+        } catch (err) {}
+      });
 
-  res.render('login');
-});
+      router.get('/post/:id/comment', withAuth, async (req, res) => {
+        try {
+          // Gets the selected post
+          const result = await Post.findOne({
+            where: {
+              id: req.params.id,
+            },
+            include: [
+              { model: User },
+              {
+                model: Comment,
+                include: {
+                  model: User,
+                },
+              },
+            ],
+          });
 
-module.exports = router;
+          // Makes the data readable
+          const postsFlat = result.get({ plain: true });
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+
+          } else {
+            res.render('addComment', {
+              post: postsFlat,
+              user: req.session.user,
+            });
+          }
+        } catch (err) {
+          console.log(err);
+
+        }
+      });
+
+      router.get('/post', async (req, res) => {
+        try {
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+          } else {
+            res.render('addPost', {
+              user: req.session.user_name,
+            });
+          }
+
+        } catch (err) {
+          res.status(500).json(err);
+        }
+      });
+
+      router.post('/post', async (req, res) => {
+        try {
+          // Creates the post with the body
+          const post = await Post.create({
+            body: req.body.postBody,
+            date: req.body.postDate,
+            title: req.body.postTitle,
+            post_id: req.params.post_id,
+            user_id: req.session.user_id,
+          });
+
+        } catch (err) {
+          res.status(500).json(err);
+        }
+      });
+
+      // Adds post request for adding comments
+      router.post('/:post_id/comment', async (req, res) => {
+        try {
+          // Creates the comment
+          const comment = await Comment.create({
+            body: req.body.commentText,
+            post_id: req.params.post_id,
+            user_id: req.session.user_id,
+          });
+
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+
+          } else {
+            // Renders the comment page
+            res.redirect(`/post/${req.params.post_id}/comment`);
+          }
+        } catch (err) {}
+      });
+
+      // Adds get request for editing comments
+      router.get('/post/edit/:id', async (req, res) => {
+        try {
+          // Gets the selected post
+          const result = await Post.findOne({
+            where: {
+              id: req.params.id,
+            },
+            include: [
+              { model: User },
+              {
+                model: Comment,
+                include: {
+                  model: User,
+                },
+              },
+            ],
+          });
+
+          // Makes the template readable
+          const postsFlat = result.get({ plain: true });
+
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+
+          } else {
+            // argument is handlebars file
+            res.render('editPost', {
+              post: postsFlat,
+              user: req.session.user,
+            });
+          }
+        } catch (err) {}
+      });
+
+      // Adds post request for editing posts
+      router.put('/edit/:id', async (req, res) => {
+        try {
+          // Udates the posts with body and title
+          const post = await Post.update(
+            {
+              body: req.body.postText,
+              title: req.body.postTitle,
+            },
+            {
+              where: {
+                id: req.params.id,
+              },
+            },
+          );
+
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+
+          } else {
+            // Renders the dashboard
+            res.redirect('/dashboard');
+          }
+        } catch (err) { }
+      });
+
+      // Adds post request for deleting posts
+      router.post('/delete/:id', async (req, res) => {
+        try {
+          // Deletes the posts with post_id
+          const post = await Post.destroy({
+            where: {
+              post_id: req.params.id,
+            },
+            force: true,
+            cascade: true,
+          });
+
+          // Checks if the users are logged in
+          if (req.session.user_id === undefined) {
+            res.redirect('/login');
+
+          } else {
+
+            // renders the dashboard
+            res.redirect('/dashboard');
+          }
+        } catch (err) {
+        }
+      });
+
+      // Adds get request for the register
+      router.get('/register', (req, res) => {
+
+        // Renders handlebars
+        res.render('register', {
+          user: req.session.user_name,
+        });
+      });
+
+      // Adds a get request for the login
+      router.get('/login', (req, res) => {
+        // Renders the login handlebars
+        res.render('login');
+      });
+
+      // Adds get request for the login
+      router.get('/logout', (req, res) => {
+
+        // Checks if users are logged in
+        if (req.session.user_name) {
+          // Destroys the current session
+          req.session.destroy(() => {
+            res.status(200).render('homepage');
+          });
+
+        } else {
+          res.status(404).end();
+        }
+      });
+
+
+      module.exports = router;
