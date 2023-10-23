@@ -41,6 +41,7 @@ const editPost = async function (event) {
 
     } else {
     alert(response.statusText);
+    }
 };
 
 const deletePost = async function (event) {
