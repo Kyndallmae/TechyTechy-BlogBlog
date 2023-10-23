@@ -1,23 +1,52 @@
 const sequelize = require('../config/connection');
-const { User, Project } = require('../models');
+const { User, Comment, Post } = require('../models');
 
-const userData = require('./userData.json');
-const projectData = require('./projectData.json');
+const userInfo = [
+  {
+     name: 'Guest',
+     email: 'guest@example.com',
+     password: '00000000',
+  },
+];
+
+const postInfo = [
+  {
+     date: new Date().toLocaleString(),
+     body: 'Hello User!',
+     title: 'First Post',
+     user_id: 1,
+  },
+  {
+     date: new Date().toLocaleString(),
+     body: 'Hello User 2!',
+     title: 'Second Post',
+     user_id: 1,
+  },
+];
+
+const commentInfo = [
+  {
+     body: 'Hello User 3',
+     user_id: 1,
+     post_id: 1,
+  },
+];
 
 const seedDatabase = async () => {
   await sequelize.sync({ force: true });
 
-  const users = await User.bulkCreate(userData, {
-    individualHooks: true,
-    returning: true,
+  await User.bulkCreate(userInfo, {
+     individualHooks: true,
+     returning: true,
   });
 
-  for (const project of projectData) {
-    await Project.create({
-      ...project,
-      user_id: users[Math.floor(Math.random() * users.length)].id,
-    });
-  }
+  await Post.bulkCreate(postInfo, {
+     returning: true,
+  });
+
+  await Comment.bulkCreate(commentInfo, {
+     returning: true,
+  });
 
   process.exit(0);
 };
