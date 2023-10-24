@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "seed": "node seeds/seed.js",
-    "watch":"nodemon server.js",
+    "watch": "nodemon server.js",
     "sql": "mysql -u root -p blog_db"
   },
   "keywords": [],
@@ -15,21 +15,21 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.0.0",
-    "mysql2": "^3.6.0",
+    "bootstrap": "^5.3.2",
     "connect-session-sequelize": "^7.0.4",
     "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "express-handlebars": "^5.2.0",
-    "express-session": "^1.17.1",
-    "sequelize": "^6.3.5",
     "eslint": "^7.12.1",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "prettier": "^3.0.3"
+    "express": "^4.17.1",
+    "express-handlebars": "^5.2.0",
+    "express-session": "^1.17.1",
+    "mysql2": "^3.6.0",
+    "prettier": "^3.0.3",
+    "sequelize": "^6.3.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "eslint": "^8.48.0"
-    
+    "eslint": "^8.48.0",
+    "nodemon": "^3.0.1"
   }
 }
