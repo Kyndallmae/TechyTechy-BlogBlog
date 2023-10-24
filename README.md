@@ -1,5 +1,5 @@
 # TechyTechy-BlogBlog
-A tech blog where users can post blogs about different projects they are working on and comment on other posts. 
+A tech blog where users can post content about different projects they are working on and comment on other posts. 
 
 ## Description
 This application is a blog that allows users to register and create blog posts. Users can post, edit, and comment on posts. This application was created as a space for people interested in different types of technology and to create a community of their peers. 
